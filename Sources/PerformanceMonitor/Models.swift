@@ -96,4 +96,18 @@ enum DesktopPosition {
             height: panelSize.height
         )
     }
+
+    static func constrainedFrame(_ frame: CGRect, within visibleFrame: CGRect) -> CGRect {
+        let width = min(frame.width, visibleFrame.width)
+        let height = min(frame.height, visibleFrame.height)
+        let maximumX = max(visibleFrame.minX, visibleFrame.maxX - width)
+        let maximumY = max(visibleFrame.minY, visibleFrame.maxY - height)
+
+        return CGRect(
+            x: min(max(frame.minX, visibleFrame.minX), maximumX),
+            y: min(max(frame.minY, visibleFrame.minY), maximumY),
+            width: width,
+            height: height
+        )
+    }
 }
