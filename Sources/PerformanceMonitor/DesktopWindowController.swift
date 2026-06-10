@@ -11,14 +11,19 @@ final class DesktopWindowController: NSObject, NSWindowDelegate {
     static let shared = DesktopWindowController()
 
     private let panelSize = CGSize(width: 360, height: 620)
+    private let dragHandleHeight: CGFloat = 64
     private let savedOriginXKey = "desktopPanel.origin.x"
     private let savedOriginYKey = "desktopPanel.origin.y"
     private var panel: DesktopPanel?
     private var observers: [NSObjectProtocol] = []
+    private var eventMonitors: [Any] = []
     private var isAdjustingFrame = false
+    private var dragStartMouseLocation: CGPoint?
+    private var dragStartPanelOrigin: CGPoint?
 
     private override init() {
         super.init()
+        installDragEventMonitors()
         let center = NotificationCenter.default
         observers.append(
             center.addObserver(
@@ -64,6 +69,8 @@ final class DesktopWindowController: NSObject, NSWindowDelegate {
     }
 
     func finishDraggingPanel() {
+        dragStartMouseLocation = nil
+        dragStartPanelOrigin = nil
         keepPanelVisible()
     }
 
@@ -97,6 +104,69 @@ final class DesktopWindowController: NSObject, NSWindowDelegate {
             rootView: DashboardView(store: store)
         )
         return panel
+    }
+
+    private func installDragEventMonitors() {
+        let mask: NSEvent.EventTypeMask = [
+            .leftMouseDown,
+            .leftMouseDragged,
+            .leftMouseUp
+        ]
+
+        if let localMonitor = NSEvent.addLocalMonitorForEvents(matching: mask, handler: { [weak self] event in
+            MainActor.assumeIsolated {
+                self?.handleDragEvent(event)
+            }
+            return event
+        }) {
+            eventMonitors.append(localMonitor)
+        }
+
+        if let globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: mask, handler: { [weak self] event in
+            Task { @MainActor in
+                self?.handleDragEvent(event)
+            }
+        }) {
+            eventMonitors.append(globalMonitor)
+        }
+    }
+
+    private func handleDragEvent(_ event: NSEvent) {
+        guard let panel, panel.isVisible else { return }
+        let mouseLocation = NSEvent.mouseLocation
+
+        switch event.type {
+        case .leftMouseDown:
+            let dragHandleFrame = CGRect(
+                x: panel.frame.minX,
+                y: panel.frame.maxY - dragHandleHeight,
+                width: panel.frame.width,
+                height: dragHandleHeight
+            )
+            guard dragHandleFrame.contains(mouseLocation) else { return }
+            dragStartMouseLocation = mouseLocation
+            dragStartPanelOrigin = panel.frame.origin
+
+        case .leftMouseDragged:
+            guard let dragStartMouseLocation,
+                  let dragStartPanelOrigin else {
+                return
+            }
+            let newOrigin = CGPoint(
+                x: dragStartPanelOrigin.x + mouseLocation.x - dragStartMouseLocation.x,
+                y: dragStartPanelOrigin.y + mouseLocation.y - dragStartMouseLocation.y
+            )
+            isAdjustingFrame = true
+            panel.setFrameOrigin(newOrigin)
+            isAdjustingFrame = false
+
+        case .leftMouseUp:
+            guard dragStartMouseLocation != nil else { return }
+            finishDraggingPanel()
+
+        default:
+            break
+        }
     }
 
     private func restorePosition() {
