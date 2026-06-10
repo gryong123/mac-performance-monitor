@@ -7,6 +7,30 @@ struct ProcessUsage: Identifiable, Sendable, Equatable {
     let memoryMB: Double
 }
 
+enum ProcessSortMetric: String, CaseIterable, Identifiable {
+    case cpu = "CPU"
+    case memory = "内存"
+
+    var id: String { rawValue }
+
+    func sorted(_ processes: [ProcessUsage]) -> [ProcessUsage] {
+        processes.sorted { first, second in
+            switch self {
+            case .cpu:
+                if first.cpuPercent == second.cpuPercent {
+                    return first.memoryMB > second.memoryMB
+                }
+                return first.cpuPercent > second.cpuPercent
+            case .memory:
+                if first.memoryMB == second.memoryMB {
+                    return first.cpuPercent > second.cpuPercent
+                }
+                return first.memoryMB > second.memoryMB
+            }
+        }
+    }
+}
+
 struct MetricSnapshot: Sendable, Equatable {
     var timestamp: Date
     var cpuPercent: Double

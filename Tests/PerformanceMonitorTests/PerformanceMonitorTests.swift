@@ -52,4 +52,15 @@ final class PerformanceMonitorTests: XCTestCase {
         XCTAssertEqual(result.y, 176)
     }
 
+    func testProcessSortingCanSwitchBetweenCPUAndMemory() {
+        let processes = [
+            ProcessUsage(id: 1, name: "内存应用", cpuPercent: 8, memoryMB: 900),
+            ProcessUsage(id: 2, name: "CPU应用", cpuPercent: 70, memoryMB: 120),
+            ProcessUsage(id: 3, name: "普通应用", cpuPercent: 20, memoryMB: 300)
+        ]
+
+        XCTAssertEqual(ProcessSortMetric.cpu.sorted(processes).first?.name, "CPU应用")
+        XCTAssertEqual(ProcessSortMetric.memory.sorted(processes).first?.name, "内存应用")
+    }
+
 }

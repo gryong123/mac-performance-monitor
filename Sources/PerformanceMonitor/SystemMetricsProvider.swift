@@ -228,14 +228,6 @@ final class SystemMetricsProvider: MetricsProvider, @unchecked Sendable {
                     )
                 }
                 .filter { $0.id != ProcessInfo.processInfo.processIdentifier }
-                .sorted {
-                    if $0.cpuPercent == $1.cpuPercent {
-                        return $0.memoryMB > $1.memoryMB
-                    }
-                    return $0.cpuPercent > $1.cpuPercent
-                }
-                .prefix(6)
-                .map { $0 }
         } catch {
             return []
         }

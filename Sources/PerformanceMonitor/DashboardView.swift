@@ -220,9 +220,14 @@ struct DashboardView: View {
                 Label("高占用进程", systemImage: "list.bullet.rectangle")
                     .font(.caption.weight(.semibold))
                 Spacer()
-                Text("CPU · 内存")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                Picker("进程排序方式", selection: $store.processSortMetric) {
+                    ForEach(ProcessSortMetric.allCases) { metric in
+                        Text(metric.rawValue).tag(metric)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.segmented)
+                .frame(width: 108)
             }
 
             if store.snapshot.topProcesses.isEmpty {
@@ -231,16 +236,21 @@ struct DashboardView: View {
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, minHeight: 54)
             } else {
-                ForEach(store.snapshot.topProcesses.prefix(6)) { process in
+                ForEach(displayedProcesses) { process in
                     HStack(spacing: 8) {
                         Text(process.name)
                             .font(.caption)
                             .lineLimit(1)
                         Spacer()
                         Text(String(format: "%.1f%%", process.cpuPercent))
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(
+                                store.processSortMetric == .cpu ? .primary : .secondary
+                            )
+                            .frame(width: 48, alignment: .trailing)
                         Text(String(format: "%.0f MB", process.memoryMB))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(
+                                store.processSortMetric == .memory ? .primary : .secondary
+                            )
                             .frame(width: 58, alignment: .trailing)
                     }
                     .fontDesign(.monospaced)
@@ -249,6 +259,14 @@ struct DashboardView: View {
             }
         }
         .cardStyle()
+    }
+
+    private var displayedProcesses: [ProcessUsage] {
+        Array(
+            store.processSortMetric
+                .sorted(store.snapshot.topProcesses)
+                .prefix(6)
+        )
     }
 
     private var batteryDetail: String {

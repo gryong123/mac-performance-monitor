@@ -13,6 +13,11 @@ final class MetricsStore: ObservableObject {
     @Published var historyRange: HistoryRange = .hour {
         didSet { loadHistory() }
     }
+    @Published var processSortMetric: ProcessSortMetric {
+        didSet {
+            defaults.set(processSortMetric.rawValue, forKey: "process.sortMetric")
+        }
+    }
 
     @Published var thresholds: AlertThresholds {
         didSet {
@@ -38,6 +43,9 @@ final class MetricsStore: ObservableObject {
         self.historyStore = historyStore
         self.alertManager = alertManager
 
+        processSortMetric = ProcessSortMetric(
+            rawValue: UserDefaults.standard.string(forKey: "process.sortMetric") ?? ""
+        ) ?? .cpu
         let savedCPU = defaults.double(forKey: "threshold.cpu")
         let savedMemory = defaults.double(forKey: "threshold.memory")
         let savedDisk = defaults.double(forKey: "threshold.disk")
