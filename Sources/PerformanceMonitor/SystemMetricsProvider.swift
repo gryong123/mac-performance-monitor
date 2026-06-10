@@ -234,7 +234,7 @@ final class SystemMetricsProvider: MetricsProvider, @unchecked Sendable {
                     }
                     return $0.cpuPercent > $1.cpuPercent
                 }
-                .prefix(4)
+                .prefix(6)
                 .map { $0 }
         } catch {
             return []

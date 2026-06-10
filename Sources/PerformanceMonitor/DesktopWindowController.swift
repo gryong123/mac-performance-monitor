@@ -10,10 +10,11 @@ final class DesktopPanel: NSPanel {
 final class DesktopWindowController: NSObject, NSWindowDelegate {
     static let shared = DesktopWindowController()
 
-    private let panelSize = CGSize(width: 360, height: 620)
+    private let panelSize = DesktopPosition.panelSize
     private let dragHandleHeight: CGFloat = 64
     private let savedOriginXKey = "desktopPanel.origin.x"
     private let savedOriginYKey = "desktopPanel.origin.y"
+    private let savedPanelHeightKey = "desktopPanel.height"
     private var panel: DesktopPanel?
     private var observers: [NSObjectProtocol] = []
     private var eventMonitors: [Any] = []
@@ -181,10 +182,18 @@ final class DesktopWindowController: NSObject, NSWindowDelegate {
 
         let proposedFrame: CGRect
         if hasSavedOrigin {
+            let savedHeight = defaults.object(forKey: savedPanelHeightKey) == nil
+                ? 620
+                : defaults.double(forKey: savedPanelHeightKey)
+            let savedOrigin = CGPoint(
+                x: defaults.double(forKey: savedOriginXKey),
+                y: defaults.double(forKey: savedOriginYKey)
+            )
             proposedFrame = CGRect(
-                origin: CGPoint(
-                    x: defaults.double(forKey: savedOriginXKey),
-                    y: defaults.double(forKey: savedOriginYKey)
+                origin: DesktopPosition.originKeepingTop(
+                    origin: savedOrigin,
+                    previousHeight: savedHeight,
+                    newHeight: panelSize.height
                 ),
                 size: panelSize
             )
@@ -234,5 +243,6 @@ final class DesktopWindowController: NSObject, NSWindowDelegate {
         let defaults = UserDefaults.standard
         defaults.set(origin.x, forKey: savedOriginXKey)
         defaults.set(origin.y, forKey: savedOriginYKey)
+        defaults.set(panelSize.height, forKey: savedPanelHeightKey)
     }
 }

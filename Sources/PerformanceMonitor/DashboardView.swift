@@ -65,7 +65,11 @@ struct DashboardView: View {
             processCard
         }
         .padding(12)
-        .frame(width: 360, height: 620, alignment: .top)
+        .frame(
+            width: DesktopPosition.panelSize.width,
+            height: DesktopPosition.panelSize.height,
+            alignment: .top
+        )
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay {
@@ -227,7 +231,7 @@ struct DashboardView: View {
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, minHeight: 54)
             } else {
-                ForEach(store.snapshot.topProcesses.prefix(3)) { process in
+                ForEach(store.snapshot.topProcesses.prefix(6)) { process in
                     HStack(spacing: 8) {
                         Text(process.name)
                             .font(.caption)

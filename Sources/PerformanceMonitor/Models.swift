@@ -84,9 +84,11 @@ struct AlertThresholds: Equatable {
 }
 
 enum DesktopPosition {
+    static let panelSize = CGSize(width: 360, height: 684)
+
     static func frame(
         visibleFrame: CGRect,
-        panelSize: CGSize = CGSize(width: 360, height: 620),
+        panelSize: CGSize = panelSize,
         margin: CGFloat = 16
     ) -> CGRect {
         CGRect(
@@ -111,4 +113,14 @@ enum DesktopPosition {
         )
     }
 
+    static func originKeepingTop(
+        origin: CGPoint,
+        previousHeight: CGFloat,
+        newHeight: CGFloat
+    ) -> CGPoint {
+        CGPoint(
+            x: origin.x,
+            y: origin.y + previousHeight - newHeight
+        )
+    }
 }

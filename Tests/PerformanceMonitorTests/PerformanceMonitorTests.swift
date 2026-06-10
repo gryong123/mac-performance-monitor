@@ -6,14 +6,14 @@ final class PerformanceMonitorTests: XCTestCase {
         let visibleFrame = CGRect(x: 0, y: 40, width: 1440, height: 860)
         let result = DesktopPosition.frame(
             visibleFrame: visibleFrame,
-            panelSize: CGSize(width: 360, height: 620),
+            panelSize: DesktopPosition.panelSize,
             margin: 16
         )
 
         XCTAssertEqual(result.origin.x, 16)
         XCTAssertEqual(result.origin.y, 56)
         XCTAssertEqual(result.size.width, 360)
-        XCTAssertEqual(result.size.height, 620)
+        XCTAssertEqual(result.size.height, 684)
     }
 
     func testHistoryRangesMatchExpectedDurations() {
@@ -24,7 +24,12 @@ final class PerformanceMonitorTests: XCTestCase {
 
     func testDraggedPanelIsKeptInsideVisibleFrame() {
         let visibleFrame = CGRect(x: 0, y: 40, width: 1440, height: 860)
-        let offscreenFrame = CGRect(x: -180, y: 720, width: 360, height: 620)
+        let offscreenFrame = CGRect(
+            x: -180,
+            y: 720,
+            width: DesktopPosition.panelSize.width,
+            height: DesktopPosition.panelSize.height
+        )
         let result = DesktopPosition.constrainedFrame(
             offscreenFrame,
             within: visibleFrame
@@ -33,7 +38,18 @@ final class PerformanceMonitorTests: XCTestCase {
         XCTAssertEqual(result.minX, visibleFrame.minX)
         XCTAssertEqual(result.maxY, visibleFrame.maxY)
         XCTAssertEqual(result.size.width, 360)
-        XCTAssertEqual(result.size.height, 620)
+        XCTAssertEqual(result.size.height, 684)
+    }
+
+    func testIncreasingHeightKeepsPanelTopInPlace() {
+        let result = DesktopPosition.originKeepingTop(
+            origin: CGPoint(x: 80, y: 240),
+            previousHeight: 620,
+            newHeight: 684
+        )
+
+        XCTAssertEqual(result.x, 80)
+        XCTAssertEqual(result.y, 176)
     }
 
 }
