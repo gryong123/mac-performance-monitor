@@ -2,6 +2,9 @@
 
 一个默认出现在 macOS 主屏幕左下角、可自由拖动的轻量电脑性能监测面板。
 
+<img width="844" height="1476" alt="image" src="https://github.com/user-attachments/assets/3169c9c1-4a8e-4d4a-a7d2-16a7ddd59e19" />
+
+
 ## 开发运行
 
 ```bash
