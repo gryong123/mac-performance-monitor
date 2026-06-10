@@ -1,3 +1,4 @@
+import AppKit
 import Charts
 import SwiftUI
 
@@ -101,6 +102,13 @@ struct DashboardView: View {
             .background(accentColor.opacity(0.13), in: Capsule())
             .accessibilityLabel("设备状态：\(store.healthLevel.rawValue)")
         }
+        .contentShape(Rectangle())
+        .overlay {
+            WindowDragArea {
+                DesktopWindowController.shared.finishDraggingPanel()
+            }
+        }
+        .accessibilityHint("按住标题区域可移动监测面板")
     }
 
     private var historyCard: some View {
@@ -268,6 +276,46 @@ struct DashboardView: View {
         if value >= threshold { return "超过告警阈值" }
         if value >= threshold * 0.8 { return "接近告警阈值" }
         return "运行正常"
+    }
+}
+
+private struct WindowDragArea: NSViewRepresentable {
+    let onDragEnded: @MainActor () -> Void
+
+    func makeNSView(context: Context) -> DragView {
+        DragView(onDragEnded: onDragEnded)
+    }
+
+    func updateNSView(_ nsView: DragView, context: Context) {
+        nsView.onDragEnded = onDragEnded
+    }
+
+    @MainActor
+    final class DragView: NSView {
+        var onDragEnded: @MainActor () -> Void
+
+        init(onDragEnded: @escaping @MainActor () -> Void) {
+            self.onDragEnded = onDragEnded
+            super.init(frame: .zero)
+        }
+
+        @available(*, unavailable)
+        required init?(coder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
+
+        override func mouseDown(with event: NSEvent) {
+            window?.performDrag(with: event)
+            onDragEnded()
+        }
+
+        override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+            true
+        }
+
+        override func resetCursorRects() {
+            addCursorRect(bounds, cursor: .openHand)
+        }
     }
 }
 

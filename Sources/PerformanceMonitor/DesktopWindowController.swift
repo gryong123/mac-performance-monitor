@@ -63,6 +63,10 @@ final class DesktopWindowController: NSObject, NSWindowDelegate {
         save(origin: panel.frame.origin)
     }
 
+    func finishDraggingPanel() {
+        keepPanelVisible()
+    }
+
     private func makePanel(store: MetricsStore) -> DesktopPanel {
         let panel = DesktopPanel(
             contentRect: CGRect(origin: .zero, size: panelSize),

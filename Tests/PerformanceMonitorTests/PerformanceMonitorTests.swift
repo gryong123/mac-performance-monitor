@@ -35,4 +35,5 @@ final class PerformanceMonitorTests: XCTestCase {
         XCTAssertEqual(result.size.width, 360)
         XCTAssertEqual(result.size.height, 620)
     }
+
 }
