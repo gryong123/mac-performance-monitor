@@ -198,7 +198,7 @@ struct DashboardView: View {
             )
             Divider().frame(height: 28)
             SensorItem(
-                title: "温度",
+                title: "电池温度",
                 value: store.snapshot.temperatureCelsius.map { String(format: "%.0f℃", $0) } ?? "暂不可用",
                 icon: "thermometer.medium",
                 unavailable: store.snapshot.temperatureCelsius == nil

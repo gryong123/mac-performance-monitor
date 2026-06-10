@@ -12,7 +12,7 @@ final class SystemMetricsProvider: MetricsProvider, @unchecked Sendable {
     private var previousNetwork: (received: UInt64, sent: UInt64, date: Date)?
     private let sensorProvider: SensorProvider
 
-    init(sensorProvider: SensorProvider = UnavailableSensorProvider()) {
+    init(sensorProvider: SensorProvider = AppleSmartBatterySensorProvider()) {
         self.sensorProvider = sensorProvider
     }
 

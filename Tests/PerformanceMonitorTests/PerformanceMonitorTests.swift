@@ -63,4 +63,18 @@ final class PerformanceMonitorTests: XCTestCase {
         XCTAssertEqual(ProcessSortMetric.memory.sorted(processes).first?.name, "内存应用")
     }
 
+    func testBatteryTemperatureConvertsFromIOKitValue() throws {
+        let temperature = try XCTUnwrap(
+            AppleSmartBatterySensorProvider.celsius(fromRawValue: 3046)
+        )
+        XCTAssertEqual(
+            temperature,
+            30.46,
+            accuracy: 0.001
+        )
+        XCTAssertNil(
+            AppleSmartBatterySensorProvider.celsius(fromRawValue: 15_000)
+        )
+    }
+
 }

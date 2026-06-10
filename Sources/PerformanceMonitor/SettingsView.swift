@@ -32,8 +32,8 @@ struct SettingsView: View {
             }
 
             Section("传感器权限") {
-                Label("GPU、温度与风扇当前使用安全降级模式", systemImage: "lock.shield")
-                Text("未安装管理员辅助程序，应用不会读取或修改 SMC。")
+                Label("电池温度使用系统只读接口", systemImage: "thermometer.medium")
+                Text("CPU/GPU 核心温度与风扇仍未开放；应用不会读取或修改 SMC。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
