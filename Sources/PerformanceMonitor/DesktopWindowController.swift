@@ -82,7 +82,7 @@ final class DesktopWindowController: NSObject, NSWindowDelegate {
             defer: false
         )
         panel.level = NSWindow.Level(
-            rawValue: Int(CGWindowLevelForKey(.desktopWindow)) + 1
+            rawValue: Int(CGWindowLevelForKey(.desktopIconWindow)) + 1
         )
         panel.collectionBehavior = [
             .canJoinAllSpaces,
