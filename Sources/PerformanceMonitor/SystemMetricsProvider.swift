@@ -2,6 +2,14 @@ import Darwin
 import Foundation
 import IOKit.ps
 
+private struct RawProcessUsage {
+    let id: Int32
+    let parentID: Int32
+    let command: String
+    let cpuPercent: Double
+    let memoryMB: Double
+}
+
 protocol MetricsProvider: Sendable {
     func sample() async -> MetricSnapshot
 }
@@ -193,7 +201,7 @@ final class SystemMetricsProvider: MetricsProvider, @unchecked Sendable {
     private func topProcesses() -> [ProcessUsage] {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/ps")
-        process.arguments = ["-Ao", "pid=,pcpu=,rss=,comm="]
+        process.arguments = ["-Ao", "pid=,ppid=,pcpu=,rss=,comm="]
 
         let output = Pipe()
         process.standardOutput = output
@@ -206,30 +214,81 @@ final class SystemMetricsProvider: MetricsProvider, @unchecked Sendable {
 
             guard let text = String(data: data, encoding: .utf8) else { return [] }
 
-            return text
+            let rawProcesses = text
                 .split(separator: "\n")
-                .compactMap { line -> ProcessUsage? in
+                .compactMap { line -> RawProcessUsage? in
                     let parts = line.split(
-                        maxSplits: 3,
+                        maxSplits: 4,
                         whereSeparator: { $0 == " " || $0 == "\t" }
                     )
-                    guard parts.count == 4,
+                    guard parts.count == 5,
                           let pid = Int32(parts[0]),
-                          let cpu = Double(parts[1]),
-                          let rss = Double(parts[2]) else {
+                          let parentID = Int32(parts[1]),
+                          let cpu = Double(parts[2]),
+                          let rss = Double(parts[3]) else {
                         return nil
                     }
 
-                    return ProcessUsage(
+                    return RawProcessUsage(
                         id: pid,
-                        name: URL(fileURLWithPath: String(parts[3])).lastPathComponent,
+                        parentID: parentID,
+                        command: String(parts[4]),
                         cpuPercent: cpu,
                         memoryMB: rss / 1024
                     )
                 }
+            let processesByID = Dictionary(
+                uniqueKeysWithValues: rawProcesses.map { ($0.id, $0) }
+            )
+
+            return rawProcesses
                 .filter { $0.id != ProcessInfo.processInfo.processIdentifier }
+                .map { rawProcess in
+                    let applicationName = Self.applicationName(
+                        for: rawProcess,
+                        processesByID: processesByID
+                    )
+                    return ProcessUsage(
+                        id: rawProcess.id,
+                        name: Self.processName(fromCommand: rawProcess.command),
+                        applicationName: applicationName,
+                        isApplication: applicationName != nil,
+                        cpuPercent: rawProcess.cpuPercent,
+                        memoryMB: rawProcess.memoryMB
+                    )
+                }
         } catch {
             return []
         }
+    }
+
+    static func processName(fromCommand command: String) -> String {
+        URL(fileURLWithPath: command).lastPathComponent
+    }
+
+    static func applicationName(fromCommand command: String) -> String {
+        let components = URL(fileURLWithPath: command).pathComponents
+        if let appComponent = components.first(where: { $0.hasSuffix(".app") }) {
+            return String(appComponent.dropLast(4))
+        }
+        return processName(fromCommand: command)
+    }
+
+    private static func applicationName(
+        for process: RawProcessUsage,
+        processesByID: [Int32: RawProcessUsage]
+    ) -> String? {
+        var current: RawProcessUsage? = process
+        var visited = Set<Int32>()
+
+        while let candidate = current, visited.insert(candidate.id).inserted {
+            let components = URL(fileURLWithPath: candidate.command).pathComponents
+            if let appComponent = components.first(where: { $0.hasSuffix(".app") }) {
+                return String(appComponent.dropLast(4))
+            }
+            current = processesByID[candidate.parentID]
+        }
+
+        return nil
     }
 }

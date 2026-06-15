@@ -217,7 +217,10 @@ struct DashboardView: View {
     private var processCard: some View {
         VStack(spacing: 5) {
             HStack {
-                Label("高占用进程", systemImage: "list.bullet.rectangle")
+                Label(
+                    store.processSortMetric == .cpu ? "高占用进程" : "高内存应用",
+                    systemImage: "list.bullet.rectangle"
+                )
                     .font(.caption.weight(.semibold))
                 Spacer()
                 Picker("进程排序方式", selection: $store.processSortMetric) {
@@ -247,11 +250,11 @@ struct DashboardView: View {
                                 store.processSortMetric == .cpu ? .primary : .secondary
                             )
                             .frame(width: 48, alignment: .trailing)
-                        Text(String(format: "%.0f MB", process.memoryMB))
+                        Text(MetricFormatting.memory(process.memoryMB))
                             .foregroundStyle(
                                 store.processSortMetric == .memory ? .primary : .secondary
                             )
-                            .frame(width: 58, alignment: .trailing)
+                            .frame(width: 62, alignment: .trailing)
                     }
                     .fontDesign(.monospaced)
                     .accessibilityElement(children: .combine)
@@ -262,11 +265,7 @@ struct DashboardView: View {
     }
 
     private var displayedProcesses: [ProcessUsage] {
-        Array(
-            store.processSortMetric
-                .sorted(store.snapshot.topProcesses)
-                .prefix(6)
-        )
+        store.processSortMetric.displayedItems(store.snapshot.topProcesses)
     }
 
     private var batteryDetail: String {

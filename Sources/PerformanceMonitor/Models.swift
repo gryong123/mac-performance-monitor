@@ -3,8 +3,26 @@ import Foundation
 struct ProcessUsage: Identifiable, Sendable, Equatable {
     let id: Int32
     let name: String
+    let applicationName: String
+    let isApplication: Bool
     let cpuPercent: Double
     let memoryMB: Double
+
+    init(
+        id: Int32,
+        name: String,
+        applicationName: String? = nil,
+        isApplication: Bool = true,
+        cpuPercent: Double,
+        memoryMB: Double
+    ) {
+        self.id = id
+        self.name = name
+        self.applicationName = applicationName ?? name
+        self.isApplication = isApplication
+        self.cpuPercent = cpuPercent
+        self.memoryMB = memoryMB
+    }
 }
 
 enum ProcessSortMetric: String, CaseIterable, Identifiable {
@@ -13,21 +31,40 @@ enum ProcessSortMetric: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    func sorted(_ processes: [ProcessUsage]) -> [ProcessUsage] {
-        processes.sorted { first, second in
-            switch self {
-            case .cpu:
+    func displayedItems(_ processes: [ProcessUsage], limit: Int = 6) -> [ProcessUsage] {
+        let items: [ProcessUsage]
+        switch self {
+        case .cpu:
+            items = processes.sorted { first, second in
                 if first.cpuPercent == second.cpuPercent {
                     return first.memoryMB > second.memoryMB
                 }
                 return first.cpuPercent > second.cpuPercent
-            case .memory:
+            }
+        case .memory:
+            let grouped = Dictionary(
+                grouping: processes.filter(\.isApplication),
+                by: \.applicationName
+            )
+            items = grouped.map { applicationName, processes in
+                ProcessUsage(
+                    id: processes.map(\.id).min() ?? 0,
+                    name: applicationName,
+                    applicationName: applicationName,
+                    isApplication: true,
+                    cpuPercent: processes.reduce(0) { $0 + $1.cpuPercent },
+                    memoryMB: processes.reduce(0) { $0 + $1.memoryMB }
+                )
+            }
+            .sorted { first, second in
                 if first.memoryMB == second.memoryMB {
                     return first.cpuPercent > second.cpuPercent
                 }
                 return first.memoryMB > second.memoryMB
             }
         }
+
+        return Array(items.prefix(limit))
     }
 }
 
@@ -105,6 +142,15 @@ struct AlertThresholds: Equatable {
     var disk: Double
 
     static let defaults = AlertThresholds(cpu: 85, memory: 90, disk: 90)
+}
+
+enum MetricFormatting {
+    static func memory(_ megabytes: Double) -> String {
+        if megabytes >= 1024 {
+            return String(format: "%.1f GB", megabytes / 1024)
+        }
+        return String(format: "%.0f MB", megabytes)
+    }
 }
 
 enum DesktopPosition {
